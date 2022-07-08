@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/flashmob/go-guerrilla"
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/gomail.v2"
 	"io"
 	"net/http"
 	"net/smtp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/flashmob/go-guerrilla"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/gomail.v2"
 )
 
 var (
@@ -42,7 +43,7 @@ func makeTelegramConfig() *TelegramConfig {
 }
 
 func startSmtp(smtpConfig *SmtpConfig, telegramConfig *TelegramConfig) guerrilla.Daemon {
-	d, err := SmtpStart(smtpConfig, telegramConfig)
+	d, err := SmtpStart(&AppConfig{}, smtpConfig, telegramConfig)
 	if err != nil {
 		panic(fmt.Sprintf("start error: %s", err))
 	}

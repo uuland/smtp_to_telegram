@@ -5,13 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	units "github.com/docker/go-units"
-	"github.com/flashmob/go-guerrilla"
-	"github.com/flashmob/go-guerrilla/backends"
-	"github.com/flashmob/go-guerrilla/log"
-	"github.com/flashmob/go-guerrilla/mail"
-	"github.com/jhillyerd/enmime"
-	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"mime"
 	"mime/multipart"
@@ -23,6 +16,14 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/docker/go-units"
+	"github.com/flashmob/go-guerrilla"
+	"github.com/flashmob/go-guerrilla/backends"
+	"github.com/flashmob/go-guerrilla/log"
+	"github.com/flashmob/go-guerrilla/mail"
+	"github.com/jhillyerd/enmime"
+	"github.com/urfave/cli/v2"
 )
 
 var (
@@ -33,6 +34,10 @@ var (
 const (
 	BodyTruncated = "\n\n[truncated]"
 )
+
+type AppConfig struct {
+	logLevel string
+}
 
 type SmtpConfig struct {
 	smtpListen          string
@@ -99,6 +104,9 @@ func main() {
 			fmt.Printf("%s\n", err)
 			os.Exit(1)
 		}
+		appConfig := &AppConfig{
+			logLevel: c.String("log-level"),
+		}
 		smtpConfig := &SmtpConfig{
 			smtpListen:          c.String("smtp-listen"),
 			smtpPrimaryHost:     c.String("smtp-primary-host"),
@@ -125,7 +133,7 @@ func main() {
 			forwardedAttachmentRespectErrors: c.Bool("forwarded-attachment-respect-errors"),
 			messageLengthToSendAsFile:        c.Uint("message-length-to-send-as-file"),
 		}
-		d, err := SmtpStart(smtpConfig, telegramConfig)
+		d, err := SmtpStart(appConfig, smtpConfig, telegramConfig)
 		if err != nil {
 			panic(fmt.Sprintf("start error: %s", err))
 		}
@@ -133,6 +141,12 @@ func main() {
 		return nil
 	}
 	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "log-level",
+			Value:   "info",
+			Usage:   "Available levels: debug,info,error,panic",
+			EnvVars: []string{"ST_LOG_LEVEL"},
+		},
 		&cli.StringFlag{
 			Name:    "smtp-listen",
 			Value:   "127.0.0.1:2525",
@@ -222,9 +236,9 @@ func main() {
 }
 
 func SmtpStart(
-	smtpConfig *SmtpConfig, telegramConfig *TelegramConfig) (guerrilla.Daemon, error) {
+	appConfig *AppConfig, smtpConfig *SmtpConfig, telegramConfig *TelegramConfig) (guerrilla.Daemon, error) {
 
-	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String()}
+	cfg := &guerrilla.AppConfig{LogFile: log.OutputStdout.String(), LogLevel: appConfig.logLevel}
 
 	cfg.AllowedHosts = []string{"."}
 
