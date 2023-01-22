@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/smtp"
 	"strings"
@@ -673,8 +674,12 @@ QW5uYS1W6XJvbmlxdWUK
 
 func HttpServer(handler http.Handler) *http.Server {
 	h := &http.Server{Addr: testHttpServerListen, Handler: handler}
+	ln, err := net.Listen("tcp", h.Addr)
+	if err != nil {
+		panic(err)
+	}
 	go func() {
-		h.ListenAndServe()
+		h.Serve(ln)
 	}()
 	return h
 }
